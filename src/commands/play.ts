@@ -191,6 +191,7 @@ async function playStation(
       .setTitle(`🎵 Now Playing: ${station.name}`)
       .setDescription(station.description)
       .setColor(0x3498db)
+      .setImage(station.imgUrl)
       .addFields(
         { name: 'Station ID', value: station.id, inline: true },
         { name: 'URL', value: `[Stream Link](${station.url})`, inline: true }

@@ -19,7 +19,7 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     try {
       // Create multiple embeds to handle pagination
-      const stationsPerPage = 5;
+      const stationsPerPage = 3; // Reduced to show fewer stations per page for better visuals
       const totalPages = Math.ceil(radioStations.length / stationsPerPage);
       const embeds: EmbedBuilder[] = [];
 
@@ -41,7 +41,18 @@ module.exports = {
             name: `${station.name} (ID: ${station.id})`,
             value: `${station.description}\n\`Use: /play ${station.id}\``
           });
+          
+          // Set thumbnail to the first station's image on each page
+          if (pageStations.indexOf(station) === 0) {
+            embed.setThumbnail(station.imgUrl);
+          }
         });
+        
+        // Add images of the stations
+        if (pageStations.length > 0) {
+          // Set main image to the first station on each page
+          embed.setImage(pageStations[0].imgUrl);
+        }
         
         embeds.push(embed);
       }

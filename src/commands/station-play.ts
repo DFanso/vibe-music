@@ -11,6 +11,9 @@ import {
 import log from '../utils/logger';
 import { radioStations } from '../data/radioStations';
 
+// Base URL for GitHub raw content
+const imageBaseUrl = "https://raw.githubusercontent.com/DFanso/lofi-radio/main/public/images/";
+
 // Categorize stations for easier selection
 const stationCategories = [
   {
@@ -53,7 +56,8 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('📻 Radio Station Categories')
         .setDescription('Select a category to browse stations')
-        .setColor(0x3498db);
+        .setColor(0x3498db)
+        .setImage(`${imageBaseUrl}lofi-category-banner.webp`);
       
       // Create category buttons
       const row = new ActionRowBuilder<ButtonBuilder>();
@@ -101,6 +105,11 @@ module.exports = {
           .setTitle(`📻 ${selectedCategory.name} Stations`)
           .setDescription('Click a button to play a station')
           .setColor(0x3498db);
+        
+        // Add a thumbnail of the first station in the category
+        if (selectedCategory.stations.length > 0) {
+          stationsEmbed.setImage(selectedCategory.stations[0].imgUrl);
+        }
         
         // Create station buttons (up to 5 per row, max 3 rows/15 stations)
         const stationRows: ActionRowBuilder<ButtonBuilder>[] = [];
