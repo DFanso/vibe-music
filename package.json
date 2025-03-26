@@ -18,6 +18,8 @@
   "repository": "https://github.com/DFanso/discord-bot-boilerplate.git",
   "dependencies": {
     "@discordjs/builders": "^1.8.2",
+    "@discordjs/opus": "^0.10.0",
+    "@discordjs/voice": "^0.18.0",
     "@swc/core": "^1.5.25",
     "@types/node": "^20.14.0",
     "chalk": "4",
@@ -27,9 +29,11 @@
     "eslint": "^9.4.0",
     "joi": "^17.13.3",
     "nodemon": "^3.1.2",
+    "play-dl": "^1.9.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@swc-node/register": "^1.9.1",
