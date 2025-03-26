@@ -2,12 +2,14 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { 
   CommandInteraction, 
   GuildMember,
-  ChatInputCommandInteraction
+  ChatInputCommandInteraction,
+  EmbedBuilder
 } from 'discord.js';
 import { 
   getVoiceConnection,
 } from '@discordjs/voice';
 import log from '../utils/logger';
+import { BRAND_COLOR } from '../utils/embedHelper';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -32,7 +34,13 @@ module.exports = {
       // Destroy the connection to stop the radio
       connection.destroy();
       
-      await interaction.reply('⏹️ Radio stream stopped.');
+      const embed = new EmbedBuilder()
+        .setTitle('⏹️ Radio Stopped')
+        .setDescription('The radio stream has been stopped.')
+        .setColor(BRAND_COLOR)
+        .setFooter({ text: 'Created by DFanso • radio.dfanso.dev' });
+      
+      await interaction.reply({ embeds: [embed] });
       log.info(`Radio stopped by ${interaction.user.tag}`);
       
     } catch (error) {

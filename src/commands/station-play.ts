@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 import log from '../utils/logger';
 import { radioStations } from '../data/radioStations';
+import { BRAND_COLOR } from '../utils/embedHelper';
 
 // Base URL for GitHub raw content
 const imageBaseUrl = "https://raw.githubusercontent.com/DFanso/lofi-radio/main/public/images/";
@@ -56,8 +57,9 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('📻 Radio Station Categories')
         .setDescription('Select a category to browse stations')
-        .setColor(0x3498db)
-        .setImage(`${imageBaseUrl}lofi-category-banner.webp`);
+        .setColor(BRAND_COLOR)
+        .setImage(`${imageBaseUrl}lofi-category-banner.webp`)
+        .setFooter({ text: 'Created by DFanso • radio.dfanso.dev' });
       
       // Create category buttons
       const row = new ActionRowBuilder<ButtonBuilder>();
@@ -104,7 +106,8 @@ module.exports = {
         const stationsEmbed = new EmbedBuilder()
           .setTitle(`📻 ${selectedCategory.name} Stations`)
           .setDescription('Click a button to play a station')
-          .setColor(0x3498db);
+          .setColor(BRAND_COLOR)
+          .setFooter({ text: 'Created by DFanso • radio.dfanso.dev' });
         
         // Add a thumbnail of the first station in the category
         if (selectedCategory.stations.length > 0) {

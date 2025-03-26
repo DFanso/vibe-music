@@ -18,6 +18,7 @@ import {
 } from '@discordjs/voice';
 import log from '../utils/logger';
 import { radioStations } from '../data/radioStations';
+import { BRAND_COLOR } from '../utils/embedHelper';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -190,13 +191,13 @@ async function playStation(
     const embed = new EmbedBuilder()
       .setTitle(`🎵 Now Playing: ${station.name}`)
       .setDescription(station.description)
-      .setColor(0x3498db)
+      .setColor(BRAND_COLOR)
       .setImage(station.imgUrl)
       .addFields(
         { name: 'Station ID', value: station.id, inline: true },
         { name: 'URL', value: `[Stream Link](${station.url})`, inline: true }
       )
-      .setFooter({ text: 'Use /stop to stop playback' });
+      .setFooter({ text: 'Use /stop to stop playback • Created by DFanso • radio.dfanso.dev' });
     
     await interaction.editReply({ embeds: [embed] });
     

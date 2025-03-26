@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 import log from '../utils/logger';
 import { radioStations } from '../data/radioStations';
+import { BRAND_COLOR, DEFAULT_FOOTER } from '../utils/embedHelper';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,9 +32,9 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setTitle('📻 Lofi Radio Stations')
           .setDescription('Use the `/play <id>` command with the station ID to start playing.')
-          .setColor(0x3498db)
+          .setColor(BRAND_COLOR)
           .setFooter({ 
-            text: `Page ${i+1}/${totalPages} • Use /play <id> to play a station` 
+            text: `Page ${i+1}/${totalPages} • Use /play <id> to play a station • Created by DFanso • radio.dfanso.dev` 
           });
         
         pageStations.forEach(station => {
