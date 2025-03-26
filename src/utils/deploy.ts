@@ -2,9 +2,8 @@ import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import fs from 'fs';
 import path from 'path';
-import config from '../config.json';
-
-const { CLIENT_ID, TOKEN } = config;
+import config from '../utils/config';
+import log from '../utils/logger';
 
 interface Command {
   data: {
@@ -37,19 +36,19 @@ for (const folder of commandFolders) {
   }
 }
 
-const rest = new REST({ version: '9' }).setToken(TOKEN);
+const rest = new REST({ version: '9' }).setToken(config.TOKEN);
 
 (async () => {
   try {
-    console.log(`Started refreshing ${commands.length} application (/) commands.`);
+    log.info(`Started refreshing ${commands.length} application (/) commands.`);
 
     const data: any = await rest.put(
-      Routes.applicationCommands(CLIENT_ID), // Change this line for global commands
+      Routes.applicationCommands(config.CLIENT_ID),
       { body: commands },
     );
 
-    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+    log.success(`Successfully reloaded ${data.length} application (/) commands.`);
   } catch (error) {
-    console.error(error);
+    log.error(`Failed to register commands: ${error}`);
   }
 })();

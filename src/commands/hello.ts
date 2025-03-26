@@ -8,7 +8,7 @@ module.exports = {
   async execute(interaction: CommandInteraction) {
 
     try {
-      await interaction.reply(`Hello, ${interaction.user.username}!`);
+      await interaction.reply(`Hello, ${interaction.user}!`);
     } catch (error) {
       console.error(error);
       await interaction.reply('There was an error executing the command.');
