@@ -20,6 +20,7 @@
     "@discordjs/builders": "^1.8.2",
     "@swc/core": "^1.5.25",
     "@types/node": "^20.14.0",
+    "chalk": "4",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
     "env": "^0.0.2",
@@ -27,7 +28,8 @@
     "joi": "^17.13.3",
     "nodemon": "^3.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@swc-node/register": "^1.9.1",
