@@ -30,9 +30,26 @@ module.exports = {
       if (!connection) {
         return await interaction.reply('I\'m not currently playing anything!');
       }
+
+      // Get the player from the connection
+      const player = (connection as any).state.subscription?.player;
+      
+      // Clean up any existing listeners on the player
+      if (player?.cleanup) {
+        try {
+          player.cleanup();
+        } catch (e) {
+          log.error(`Error cleaning up player listeners: ${e}`);
+        }
+      }
       
       // Destroy the connection to stop the radio
-      connection.destroy();
+      try {
+        connection.destroy();
+      } catch (e) {
+        // Ignore errors if connection is already destroyed
+        log.debug('Connection was already destroyed');
+      }
       
       const embed = new EmbedBuilder()
         .setTitle('⏹️ Radio Stopped')

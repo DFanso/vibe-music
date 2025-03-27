@@ -71,7 +71,11 @@ module.exports = {
             entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
           ]);
         } catch (error) {
-          connection.destroy();
+          try {
+            connection.destroy();
+          } catch (e) {
+            // Ignore errors if connection is already destroyed
+          }
         }
       });
 
@@ -173,6 +177,9 @@ async function playStation(
   station: typeof radioStations[0]
 ): Promise<{ success: boolean }> {
   try {
+    // Set max listeners to prevent memory leak warning
+    connection.setMaxListeners(15);
+
     // Create the resource directly from the URL
     const resource = createAudioResource(station.url, {
       inputType: StreamType.Arbitrary,
@@ -202,7 +209,7 @@ async function playStation(
     await interaction.editReply({ embeds: [embed] });
     
     // Handle errors and track end
-    player.on(AudioPlayerStatus.Idle, () => {
+    const idleHandler = () => {
       log.info(`Station ${station.name} stream ended or disconnected`);
       // For radio streams, we can try to recreate the resource to keep playing
       try {
@@ -213,12 +220,33 @@ async function playStation(
       } catch (e) {
         log.error(`Failed to restart stream: ${e}`);
       }
-    });
+    };
     
-    player.on('error', (error: Error) => {
+    const errorHandler = (error: Error) => {
       log.error(`Error playing radio: ${error.message}`);
       interaction.followUp('There was an error playing the radio stream.');
-    });
+    };
+
+    // Remove any existing listeners before adding new ones
+    player.removeAllListeners(AudioPlayerStatus.Idle);
+    player.removeAllListeners('error');
+    
+    // Add new listeners
+    player.on(AudioPlayerStatus.Idle, idleHandler);
+    player.on('error', errorHandler);
+    
+    // Cleanup function to remove listeners
+    const cleanup = () => {
+      try {
+        player.removeListener(AudioPlayerStatus.Idle, idleHandler);
+        player.removeListener('error', errorHandler);
+      } catch (e) {
+        log.error(`Error cleaning up listeners: ${e}`);
+      }
+    };
+    
+    // Store cleanup function for later use
+    (player as any).cleanup = cleanup;
     
     return { success: true };
   } catch (error) {
