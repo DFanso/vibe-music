@@ -49,11 +49,6 @@ module.exports = {
           }
         });
         
-        // Add images of the stations
-        if (pageStations.length > 0) {
-          // Set main image to the first station on each page
-          embed.setImage(pageStations[0].imgUrl);
-        }
         
         embeds.push(embed);
       }
