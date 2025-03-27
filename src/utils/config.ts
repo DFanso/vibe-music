@@ -7,13 +7,15 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const config = {
   TOKEN: process.env.TOKEN || '',
-  CLIENT_ID: process.env.CLIENT_ID || ''
+  CLIENT_ID: process.env.CLIENT_ID || '',
+  NODE_ENV: process.env.NODE_ENV || 'development'
 };
 
 // use joi to validate the config
 const schema = Joi.object({
   TOKEN: Joi.string().required(),
-  CLIENT_ID: Joi.string().required()
+  CLIENT_ID: Joi.string().required(),
+  NODE_ENV: Joi.string().valid('development', 'production').required()
 });
 
 const { error } = schema.validate(config);

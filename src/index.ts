@@ -20,8 +20,8 @@ const client = new Client({
   ],
 });
 
-// Always use .ts files during development (running with ts-node/nodemon)
-const fileExtension = '.ts';
+
+const fileExtension = config.NODE_ENV === 'development' ? '.ts' : '.js';
 
 const eventFiles = fs
   .readdirSync(path.join(__dirname, 'events'))
