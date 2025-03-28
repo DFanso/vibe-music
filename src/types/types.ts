@@ -4,4 +4,16 @@ export interface RadioStation {
   url: string;
   description: string;
   imgUrl: string;
+}
+
+export interface BotProfile {
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  website?: string;
+  github?: string;
+  supportServer?: string;
+  avatarUrl: string;
+  features: string[];
 } 
