@@ -184,7 +184,7 @@ function createControlButtons(isPlaying: boolean = true) {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('stop')
-        .setEmoji('⏹️')
+        .setEmoji('😵')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId('volume_down')
