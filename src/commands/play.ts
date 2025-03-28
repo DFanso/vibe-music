@@ -4,7 +4,12 @@ import {
   GuildMember,
   EmbedBuilder,
   ChatInputCommandInteraction,
-  AutocompleteInteraction
+  AutocompleteInteraction,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+  MessageFlags
 } from 'discord.js';
 import { 
   joinVoiceChannel, 
@@ -96,7 +101,7 @@ module.exports = {
         if (alternativeStations.length > 0) {
           await interaction.followUp({
             content: `Failed to play ${station.name}. Trying an alternative station...`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
           
           // Try each alternative station until one works
@@ -105,7 +110,7 @@ module.exports = {
             if (altResult.success) {
               await interaction.followUp({
                 content: `The original station failed, so I'm playing ${altStation.name} instead.`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
               });
               break;
             }
@@ -169,6 +174,34 @@ function findAlternativeStations(station: typeof radioStations[0]) {
   return similarStations;
 }
 
+// Helper function to create control buttons
+function createControlButtons(isPlaying: boolean = true) {
+  const row = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('pause_resume')
+        .setEmoji(isPlaying ? '⏸️' : '▶️')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('stop')
+        .setEmoji('⏹️')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('volume_down')
+        .setEmoji('🔉')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('volume_up')
+        .setEmoji('🔊')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('refresh')
+        .setEmoji('🔄')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  return row;
+}
+
 // Helper function to play a station and handle errors
 async function playStation(
   interaction: ChatInputCommandInteraction, 
@@ -202,11 +235,106 @@ async function playStation(
       .setThumbnail(station.imgUrl)
       .addFields(
         { name: 'Station ID', value: station.id, inline: true },
-        { name: 'URL', value: `[Stream Link](${station.url})`, inline: true }
+        { name: 'URL', value: `[Stream Link](${station.url})`, inline: true },
+        { name: 'Volume', value: '50%', inline: true }
       )
-      .setFooter({ text: 'Use /stop to stop playback • Created by DFanso • radio.dfanso.dev' });
-    
-    await interaction.editReply({ embeds: [embed] });
+      .setFooter({ text: 'Use the buttons below to control playback • Created by DFanso • radio.dfanso.dev' });
+
+    // Send embed with control buttons
+    const controlRow = createControlButtons(true);
+    const message = await interaction.editReply({ 
+      embeds: [embed],
+      components: [controlRow]
+    });
+
+    // Set up button collector
+    const collector = message.createMessageComponentCollector({ 
+      componentType: ComponentType.Button,
+      time: 3600000 // 1 hour
+    });
+
+    collector.on('collect', async (i) => {
+      // Verify the user who clicked is in the voice channel
+      const member = i.member as GuildMember;
+      if (!member.voice.channel) {
+        await i.reply({ 
+          content: 'You need to be in a voice channel to use these controls!',
+          flags: MessageFlags.Ephemeral
+        });
+        return;
+      }
+
+      switch (i.customId) {
+        case 'pause_resume':
+          if (player.state.status === AudioPlayerStatus.Playing) {
+            player.pause();
+            embed.data.fields![2].value = '⏸️ Paused';
+            await i.update({ embeds: [embed], components: [createControlButtons(false)] });
+          } else {
+            player.unpause();
+            embed.data.fields![2].value = '▶️ Playing';
+            await i.update({ embeds: [embed], components: [createControlButtons(true)] });
+          }
+          break;
+
+        case 'stop':
+          connection.destroy();
+          embed.data.fields![2].value = '⏹️ Stopped';
+          await i.update({ 
+            embeds: [embed], 
+            components: [] 
+          });
+          collector.stop();
+          break;
+
+        case 'volume_down':
+          if (resource.volume) {
+            const currentVolume = resource.volume.volume;
+            const newVolume = Math.max(0, currentVolume - 0.1);
+            resource.volume.setVolume(newVolume);
+            embed.data.fields![2].value = `${Math.round(newVolume * 100)}%`;
+            await i.update({ embeds: [embed] });
+          }
+          break;
+
+        case 'volume_up':
+          if (resource.volume) {
+            const currentVolume = resource.volume.volume;
+            const newVolume = Math.min(1, currentVolume + 0.1);
+            resource.volume.setVolume(newVolume);
+            embed.data.fields![2].value = `${Math.round(newVolume * 100)}%`;
+            await i.update({ embeds: [embed] });
+          }
+          break;
+
+        case 'refresh':
+          try {
+            const newResource = createAudioResource(station.url, {
+              inputType: StreamType.Arbitrary,
+              inlineVolume: true
+            });
+            if (newResource.volume) {
+              newResource.volume.setVolume(resource.volume?.volume || 0.5);
+            }
+            player.play(newResource);
+            await i.reply({ 
+              content: '🔄 Stream refreshed!',
+              flags: MessageFlags.Ephemeral
+            });
+          } catch (error) {
+            await i.reply({ 
+              content: '❌ Failed to refresh stream. Please try again.',
+              flags: MessageFlags.Ephemeral
+            });
+          }
+          break;
+      }
+    });
+
+    collector.on('end', () => {
+      // Remove buttons after collector expires
+      interaction.editReply({ components: [] }).catch(() => {});
+    });
     
     // Track reconnection attempts
     let reconnectAttempts = 0;
@@ -225,7 +353,7 @@ async function playStation(
         try {
           await interaction.followUp({
             content: `⚠️ Stream connection lost after ${MAX_RECONNECT_ATTEMPTS} reconnection attempts. Please try another station or try again later.`,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
           });
         } catch (e) {
           log.error(`Failed to send max attempts message: ${e}`);
@@ -273,7 +401,7 @@ async function playStation(
       try {
         await interaction.followUp({
           content: 'There was an error playing the radio stream. Attempting to reconnect...',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
       } catch (e) {
         log.error(`Failed to send error message: ${e}`);
@@ -293,6 +421,7 @@ async function playStation(
       try {
         player.removeListener(AudioPlayerStatus.Idle, idleHandler);
         player.removeListener('error', errorHandler);
+        collector.stop();
       } catch (e) {
         log.error(`Error cleaning up listeners: ${e}`);
       }
