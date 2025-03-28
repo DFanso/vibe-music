@@ -208,23 +208,76 @@ async function playStation(
     
     await interaction.editReply({ embeds: [embed] });
     
+    // Track reconnection attempts
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 3;
+    let lastReconnectTime = Date.now();
+    const RECONNECT_COOLDOWN = 5000; // 5 seconds between reconnection attempts
+
     // Handle errors and track end
-    const idleHandler = () => {
-      log.info(`Station ${station.name} stream ended or disconnected`);
-      // For radio streams, we can try to recreate the resource to keep playing
+    const idleHandler = async () => {
+      const currentTime = Date.now();
+      const timeSinceLastReconnect = currentTime - lastReconnectTime;
+
+      // If we've tried too many times recently, stop trying
+      if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        log.warn(`Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached for station ${station.name}. Stopping reconnection attempts.`);
+        try {
+          await interaction.followUp({
+            content: `⚠️ Stream connection lost after ${MAX_RECONNECT_ATTEMPTS} reconnection attempts. Please try another station or try again later.`,
+            ephemeral: true
+          });
+        } catch (e) {
+          log.error(`Failed to send max attempts message: ${e}`);
+        }
+        return;
+      }
+
+      // If we're trying to reconnect too quickly, wait
+      if (timeSinceLastReconnect < RECONNECT_COOLDOWN) {
+        log.info(`Waiting ${RECONNECT_COOLDOWN - timeSinceLastReconnect}ms before attempting to reconnect...`);
+        return;
+      }
+
+      log.info(`Station ${station.name} stream ended, attempting reconnection (attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+      
       try {
         const newResource = createAudioResource(station.url, {
           inputType: StreamType.Arbitrary,
+          inlineVolume: true
         });
+        
+        if (newResource.volume) {
+          newResource.volume.setVolume(0.5);
+        }
+        
         player.play(newResource);
+        reconnectAttempts++;
+        lastReconnectTime = Date.now();
+        
+        // Reset reconnection attempts after 30 seconds of successful playback
+        setTimeout(() => {
+          if (player.state.status === AudioPlayerStatus.Playing) {
+            reconnectAttempts = 0;
+            log.info(`Stream has been stable for 30 seconds, resetting reconnection counter.`);
+          }
+        }, 30000);
       } catch (e) {
         log.error(`Failed to restart stream: ${e}`);
+        reconnectAttempts++;
       }
     };
     
-    const errorHandler = (error: Error) => {
+    const errorHandler = async (error: Error) => {
       log.error(`Error playing radio: ${error.message}`);
-      interaction.followUp('There was an error playing the radio stream.');
+      try {
+        await interaction.followUp({
+          content: 'There was an error playing the radio stream. Attempting to reconnect...',
+          ephemeral: true
+        });
+      } catch (e) {
+        log.error(`Failed to send error message: ${e}`);
+      }
     };
 
     // Remove any existing listeners before adding new ones
