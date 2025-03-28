@@ -18,6 +18,15 @@ module.exports = {
       }
     }
 
+    // Set bot description via application
+    try {
+      await client.application?.edit({
+        description: botProfile.description
+      });
+    } catch (error) {
+      log.warn('Could not update application description. This is normal if it was changed recently.');
+    }
+
     // Set the bot's avatar
     try {
       const currentAvatar = client.user.displayAvatarURL();
